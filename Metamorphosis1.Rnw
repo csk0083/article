@@ -1,0 +1,113 @@
+\documentclass{article}
+\usepackage{natbib}
+<<echo=FALSE>>=
+packages<-c('dplyr','tidytext','wordcloud','gutenbergr','stringr','knitr')
+knitr::write_bib(packages,file = "packages.bib")
+@
+
+<<echo=FALSE,warning=FALSE,message=FALSE>>=
+library(dplyr)
+library(gutenbergr)
+library(knitr)
+library(stringr)
+library(tidytext)
+library(wordcloud)
+@
+
+
+\begin{document}
+\title{Franz Kafka's The Metamorphosis}
+\author{Chris Kozak}
+\maketitle
+
+\begin{abstract}
+\noindent In this article, we'll do some basic sentiment analysis. We're going to construct a wordcloud for Franz Kafka's The Metamorphosis. This is one of Kafka's most well-known stories.\footnote{The short story was first published in German in 1915. Many translations exist, but we'll be using the 2002 version by David Wyllie}.
+\end{abstract}
+
+\section{Packages}
+ First, we've already loaded the following packages: dplyr for querying, tidytext and text mining (tm) for working with text, gutenbergr for downloading open-source books, wordcloud for generating visualizations, and knitr for compiling documents from R Markdown, Sweave and various other formats.
+
+<<warning=FALSE,message=FALSE>>=
+get_sentiments('nrc')
+@
+
+
+\section{Downloading The Metamorphosis}
+For this exercise, we'll be working with Franz Kafka's The Metamorphosis, and strictly comparing the amount of joy in the book to the amount of fear. In this book, a young man turns into a giant cockroach. His family at first tries to take care of him, then get sick of taking care of him, and sick of the burdens that his metamorphosis has imposed on the family, and let him die.
+
+<<warning=FALSE,message=FALSE>>=
+metamorphosis <- gutenberg_download(5200)
+
+metamorphosis_words <- metamorphosis %>%
+  unnest_tokens(word, text)
+@
+
+\noindent Word is the name of the new column we're making with the unnest_tokens command
+
+\section{Quantifying Fear and Joy}
+Next, we'll be using the tidytext package to quantify sentiment. The tidytext package comes with several built-in sentiment lexicons, including bind and AFINN, which assign values to words based on their perceived positive or negative values. But for this exercise, we will focus on the NRC emotion lexicon. This assigns words based on the seven primary emotions: joy, sadness, fear, anger, disgust, surprise, and trust. For this exercise, we only want two emotions: joy and fear.
+
+\section{Fear}
+
+For the next step, we will get only the fear words from metamorphosis. As Kafka's story involves a cockroach, there should be quite a few. The following commands will create a new dataframe that contains only the fear words from the NRC sentiment lexicon, and then join those words with the ones found in The Metamorphosis.
+
+<<warning=FALSE,message=FALSE>>=
+nrc_fear <- get_sentiments('nrc') %>% 
+  filter(sentiment == "fear")
+
+metamorphosis_fear_words<-inner_join(nrc_fear,metamorphosis_words)
+@
+
+\section{Fear in the Metamorphosis}
+
+Next, we'll see how many unique fear words we have, and how what kind of words they are using the dim() and head() commands from R:
+
+<<warning=FALSE,message=FALSE>>=
+dim(metamorphosis_fear_words)[1]
+head(metamorphosis_fear_words$word,n=20)
+@
+
+\noindent This shows that The Metamorphosis has 271 words expressing fear, and lists some examples above.
+
+
+\section{Fear Wordcloud}
+
+<<warning=FALSE,message=FALSE>>=
+wordcloud(metamorphosis_fear_words$word, 
+          colors = c("red","black","gray20",
+                     "indianred4","tomato4"))
+@
+
+
+\section{Joy}
+And now, we will do the same thing for the joy words from The Metamorphosis.
+
+<<warning=FALSE,message=FALSE>>=
+nrc_joy <- get_sentiments('nrc') %>% 
+  filter(sentiment == "joy")
+
+metamorphosis_joy_words<-inner_join(nrc_joy,metamorphosis_words)
+@
+
+\section{Joy in The Metamorphosis}
+
+<<warning=FALSE,message=FALSE>>=
+dim(metamorphosis_joy_words)[1]
+
+head(metamorphosis_joy_words$word, n=20)
+@
+
+\section{Joy Wordcloud}
+We can see from the dimension - or dim() - command, that there are 344 unique words expressing joy in The Metamorphosis. Beer is one of them. Ironically, it features more unique words expressing joy than fear. Finally, we will generate a wordcloud to display the most common words of joy.
+
+<<warning=FALSE,message=FALSE>>=
+wordcloud(metamorphosis_joy_words$word, 
+          colors =c("black","blue","darkcyan",
+                    "darkolivegreen","aquamarine3"))
+@
+
+\bibliographystyle{apa}
+\bibliography{source,packages}
+\nocite{*}
+
+\end{document}
